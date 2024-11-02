@@ -52,11 +52,11 @@ func databaseConnection() (*sql.DB, error) {
 }
 
 func main() {
-	//db, err := databaseConnection()
-	//if err != nil {
-	//	log.Fatal(err)
-	//}
-	//defer db.Close()
+	db, err := databaseConnection()
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer db.Close()
 	reader := bufio.NewReader(os.Stdin)
 
 	for {
@@ -73,18 +73,58 @@ func main() {
 		case 0:
 			os.Exit(2)
 		case 1:
-			inserir()
+			inserir(db)
 		case 2:
-			listar()
+			listar(db)
 		case 3:
-			editar()
+			fmt.Println("Insira o ID do usuário que deseja editar:")
+			input, err := reader.ReadString('\n')
+			input = strings.TrimSuffix(input, "\n")
+			id, err := strconv.Atoi(input)
+			if err != nil {
+				fmt.Println("Erro no sistema%s", err)
+			}
+			editar(db,id)
 		case 4:
-			excluir()
-
+			fmt.Println("Insira o ID do usuário que deseja excluir:")
+			input, err := reader.ReadString('\n')
+			input = strings.TrimSuffix(input, "\n")
+			id, err := strconv.Atoi(input)
+			if err != nil {
+				fmt.Println("Erro no sistema%s", err)
+			}
+			excluir(db,id)
 		default:
 			fmt.Println("Insira um valor válido.")
 		}
 	}
 }
 
-func inserir(){}func listar(){}func editar(){}func excluir(){}
+func HashPassword(password string) (string, error) {
+	// Gerar um hash da senha usando bcrypt
+	bytes, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		return "", err
+	}
+	return string(bytes), nil
+}
+
+func getValues(){
+	var username, password string
+	var err error 
+	fmt.Println("Insira seu nome de usuário:")
+	username,err = reader.ReadString('\n')
+	username = strings.TrimSuffix(username, '\n')
+	fmt.Println("Insira sua senha:")
+	password,err = reader.ReadString('\n')
+	password = strings.TrimSuffix(password,'\n')
+	if err != nil{
+		fmt.Println("Erro no sistema: %s", err)
+	}
+	return [2]string{username,HashPassword(password)}
+}
+func inserir(db){
+
+	insertion := db.Query("INSERT INTO USERS(USERNAME, PASSWORD) VALUES ($1,$2)")
+}
+func listar(){}func editar(){}func excluir(){}
