@@ -6,7 +6,7 @@ Para utilizar, você precisa de um arquivo .env.
 
 Recomendação de .env:
 
-```
+```.env
 database=go_crud # nome do banco
 port= 5432 #porta (padrão 5342)
 user=postgres #nome do usuário no banco
@@ -18,7 +18,6 @@ sslmode=disable #recomendação apenas para ambiente de desenvolvimento
 
 Script de criação da tabela do banco de dados -- Bando de dados POSTGRES (em outros bancos pode haver erros):
 
-````
 ```sql
 CREATE TABLE USERS(
   ID SERIAL PRIMARY KEY,
@@ -26,4 +25,3 @@ CREATE TABLE USERS(
   PASSWORD VARCHAR(255)
 );
 ```
-````
