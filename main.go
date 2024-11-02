@@ -14,6 +14,12 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+type User struct {
+	id       int
+	username string
+	password string
+}
+
 func getEnv(key string) string {
 	// Carrega as variáveis do .env
 	err := godotenv.Load()
@@ -76,7 +82,7 @@ func main() {
 		case 1:
 			inserir(db)
 		case 2:
-			listar(db)
+			fmt.Println(listar(db))
 		case 3:
 			fmt.Println("Insira o ID do usuário que deseja editar:")
 			input, err := reader.ReadString('\n')
@@ -146,12 +152,13 @@ func getValues() ([2]string, error) {
 * @param
 * */
 func inserir(db *sql.DB) bool {
+	// pega os valores inseridos pelo usuário
 	values, err := getValues()
 	if err != nil {
 		fmt.Println("Erro ao obter valores:", err)
 		return false
 	}
-
+	// inicia o banco de dados.
 	txn, err := db.Begin()
 	if err != nil {
 		fmt.Println("Erro ao iniciar a transação:", err)
@@ -187,7 +194,26 @@ func inserir(db *sql.DB) bool {
 	return true
 }
 
-func listar(db *sql.DB) {
+func listar(db *sql.DB) ([]User, error) {
+	// query para selecionar todos os usuários
+	rows, err := db.Query("SELECT id,username FROM USERS")
+	if err != nil {
+		return nil, err
+	}
+	var users []User
+	defer rows.Close()
+
+	for rows.Next() {
+		var row User
+		if err := rows.Scan(&row.id, &row.username); err != nil {
+			return users, err
+		}
+		users = append(users, row)
+	}
+	if err = rows.Err(); err != nil {
+		return users, err
+	}
+	return users, nil
 }
 
 func editar(db *sql.DB, id int) {
