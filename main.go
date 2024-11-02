@@ -292,5 +292,44 @@ func editar(db *sql.DB, id int) bool {
 	return true
 }
 
-func excluir(db *sql.DB, id int) {
+func excluir(db *sql.DB, id int) bool {
+	if !VerifyPassword(db, id) {
+		fmt.Println("Você não está autorizado a realizar esta operação")
+		return false
+	}
+	// inicia o banco de dados.
+	txn, err := db.Begin()
+	if err != nil {
+		fmt.Println("Erro ao iniciar a transação:", err)
+		return false
+	}
+
+	// Preparar a declaração
+	stmt, err := txn.Prepare("DELETE FROM USERS WHERE ID = $1")
+	if err != nil {
+		fmt.Println("Erro ao preparar declaração:", err)
+		// em caso de erro, o rollback desfaz a inserção no banco.
+		txn.Rollback()
+		return false
+	}
+	defer stmt.Close()
+
+	// Executar a inserção
+	_, err = stmt.Exec(id)
+	if err != nil {
+		fmt.Println("Erro ao inserir:", err)
+		txn.Rollback()
+		return false
+	}
+
+	// Confirmar a transação
+	err = txn.Commit()
+	if err != nil {
+		fmt.Println("Erro ao confirmar a transação:", err)
+		return false
+	}
+
+	fmt.Println("Usuário excluído com sucesso.")
+
+	return true
 }
