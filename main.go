@@ -82,7 +82,17 @@ func main() {
 		case 1:
 			inserir(db)
 		case 2:
-			fmt.Println(listar(db))
+			users, err := listar(db)
+			if err != nil {
+				log.Fatalf("Erro ao listar usuários: %v", err)
+			}
+
+			// Melhorar a visualização dos dados
+			fmt.Println("ID\tUsuário")
+			fmt.Println("--------------------")
+			for _, user := range users {
+				fmt.Printf("%d\t%s\n", user.id, user.username)
+			}
 		case 3:
 			fmt.Println("Insira o ID do usuário que deseja editar:")
 			input, err := reader.ReadString('\n')
@@ -115,6 +125,34 @@ func HashPassword(password string) string {
 	// gera um hash baseado no algoritmo bcrypt
 	bytes, _ := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	return string(bytes)
+}
+
+/**
+* @param senha criptografada e senha sem criptografia
+* @return a verificação se as senhas conferem
+* */
+func VerifyPassword(db *sql.DB, id int) bool {
+	fmt.Println("Insira sua senha para poder realizar a edição:")
+	reader := bufio.NewReader(os.Stdin)
+	password, err := reader.ReadString('\n')
+	if err != nil {
+		fmt.Println("Erro ao ler senha: ", err)
+	}
+	password = strings.TrimSpace(password)
+
+	// Verificar se a senha corresponde ao hash
+	var userPassword string
+	query := `SELECT password FROM USERS WHERE id = $1;`
+
+	// Executa a consulta e armazena o resultado na variável userPassword
+	err = db.QueryRow(query, id).Scan(&userPassword)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			fmt.Println("nenhum usuário encontrado com ID %d", id)
+		}
+	}
+	err = bcrypt.CompareHashAndPassword([]byte(userPassword), []byte(password))
+	return err == nil
 }
 
 /**
@@ -216,7 +254,42 @@ func listar(db *sql.DB) ([]User, error) {
 	return users, nil
 }
 
-func editar(db *sql.DB, id int) {
+func editar(db *sql.DB, id int) bool {
+	if !VerifyPassword(db, id) {
+		fmt.Println("Você não está autorizado a realizar esta operação")
+		return false
+	}
+	values, err := getValues()
+	if err != nil {
+		fmt.Println("Erro ao pegar valores")
+	}
+
+	txn, err := db.Begin()
+	if err != nil {
+		fmt.Println("Erro ao inicializar banco de dados")
+	}
+
+	stmt, err := txn.Prepare("UPDATE USERS SET USERNAME = $1, PASSWORD = $2 WHERE ID = $3")
+	if err != nil {
+		fmt.Println("Erro ao preparar declaração:", err)
+		txn.Rollback()
+	}
+	defer stmt.Close()
+
+	// Executar a edição
+	_, err = stmt.Exec(values[0], values[1], id)
+	if err != nil {
+		fmt.Println("Erro ao inserir:", err)
+		txn.Rollback()
+	}
+
+	err = txn.Commit()
+	if err != nil {
+		fmt.Println("Erro ao confirmar a transação:", err)
+	}
+
+	fmt.Println("Alterado com sucesso com sucesso.")
+	return true
 }
 
 func excluir(db *sql.DB, id int) {
