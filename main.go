@@ -1,10 +1,13 @@
 package main
 
 import (
+	"bufio"
 	"database/sql"
 	"fmt"
 	"log"
 	"os"
+	"strconv"
+	"strings"
 
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
@@ -49,11 +52,39 @@ func databaseConnection() (*sql.DB, error) {
 }
 
 func main() {
-	db, err := databaseConnection()
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer db.Close()
+	//db, err := databaseConnection()
+	//if err != nil {
+	//	log.Fatal(err)
+	//}
+	//defer db.Close()
+	reader := bufio.NewReader(os.Stdin)
 
-	fmt.Println("Conexão com o banco de dados bem-sucedida!")
+	for {
+		fmt.Print("Insira o número da operação que deseja realizar: \n1-Inserir\n2-Listar\n3-Editar\n4-Excluir\n0-Parar\n")
+
+		input, err := reader.ReadString('\n')
+		input = strings.TrimSuffix(input, "\n")
+		operacao, err := strconv.Atoi(input)
+		if err != nil {
+			fmt.Println("Erro no sistema%s", err)
+		}
+
+		switch operacao {
+		case 0:
+			os.Exit(2)
+		case 1:
+			inserir()
+		case 2:
+			listar()
+		case 3:
+			editar()
+		case 4:
+			excluir()
+
+		default:
+			fmt.Println("Insira um valor válido.")
+		}
+	}
 }
+
+func inserir(){}func listar(){}func editar(){}func excluir(){}
